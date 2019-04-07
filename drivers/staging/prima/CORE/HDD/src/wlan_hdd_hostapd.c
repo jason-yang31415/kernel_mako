@@ -2216,7 +2216,7 @@ static int iw_softap_setwpsie(struct net_device *dev,
 
    if(NULL == wps_genie) {
        hddLog(LOG1, "unable to allocate memory");
-       kfree(fwps_genie);
+       // kfree(fwps_genie);
        return -ENOMEM;
    }
    fwps_genie = wps_genie;
@@ -2781,6 +2781,13 @@ int iw_get_softap_linkspeed(struct net_device *dev,
 
    status = hdd_string_to_hex (pmacAddress, wrqu->data.length, macAddress );
    kfree(pmacAddress);
+
+   if (!VOS_IS_STATUS_SUCCESS(status)){
+      hddLog(VOS_TRACE_LEVEL_FATAL, FL("ERROR: Command not found"));
+      return -EINVAL;
+   }
+
+   status = hdd_softap_GetStaId(pHostapdAdapter, (v_MACADDR_t *)macAddress, (void *)(&staId));
 
    if (!VOS_IS_STATUS_SUCCESS(status))
    {
