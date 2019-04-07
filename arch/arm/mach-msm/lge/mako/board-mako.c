@@ -1367,10 +1367,20 @@ static struct platform_device msm_tsens_device = {
 
 static struct msm_thermal_data msm_thermal_pdata = {
 	.sensor_id = 7,
-	.poll_ms = 250,
-	.limit_temp_degC = 60,
-	.temp_hysteresis_degC = 10,
-	.freq_step = 2,
+	.poll_ms = 150,
+	.shutdown_temp = 80,
+
+	.allowed_max_high = 75,
+	.allowed_max_low = 79,
+	.allowed_max_freq = 384000,
+
+	.allowed_mid_high = 74,
+	.allowed_mid_low = 70,
+	.allowed_mid_freq = 810000,
+
+	.allowed_low_high = 69,
+	.allowed_low_low = 60,
+	.allowed_low_freq = 1350000,
 };
 
 #define MSM_SHARED_RAM_PHYS 0x80000000
