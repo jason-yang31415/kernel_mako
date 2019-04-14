@@ -103,6 +103,7 @@ struct hotplug_tunables {
 
 //static struct workqueue_struct *wq;
 static struct delayed_work decide_hotplug;
+static int offline_index = 4;
 
 #ifdef CONFIG_FB
 struct notifier_block fb_notif;
@@ -115,20 +116,22 @@ static inline void cpus_online_work(void)
 {
 	unsigned int cpu;
 
-	for (cpu = 2; cpu < 4; cpu++) {
+	for (cpu = offline_index; cpu < 4; cpu++) {
 		if (cpu_is_offline(cpu))
 			cpu_up(cpu);
 	}
+	offline_index = 4;
 }
 
-static inline void cpus_offline_work(void)
+static inline void cpus_offline_work(int index)
 {
 	unsigned int cpu;
 
-	for (cpu = 3; cpu > 1; cpu--) {
+	for (cpu = 3; cpu >= index; cpu--) {
 		if (cpu_online(cpu))
 			cpu_down(cpu);
 	}
+	offline_index = index;
 }
 
 static inline bool cpus_cpufreq_work(void)
@@ -211,7 +214,7 @@ static void cpu_smash(unsigned int load)
 
 	pr_info("mako_hotplug: smashing cpu");
 
-	cpus_offline_work();
+	cpus_offline_work(2);
 
 	/*
 	 * reset the counter yo
@@ -284,7 +287,7 @@ reschedule:
 #ifdef CONFIG_FB
 static void mako_hotplug_suspend(struct work_struct *work)
 {
-	cpus_offline_work();
+	cpus_offline_work(1);
 
 	pr_info("%s: fb suspend\n", MAKO_HOTPLUG);
 }
