@@ -454,6 +454,8 @@ struct freq_attr msm_cpufreq_attr_max_screen_off = {
 
 static struct freq_attr *msm_freq_attr[] = {
 	&cpufreq_freq_attr_scaling_available_freqs,
+	&msm_cpufreq_attr_max_screen_off,
+	&msm_cpufreq_attr_max_screen_off_khz,
 	NULL,
 };
 

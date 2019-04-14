@@ -20,6 +20,11 @@
 #include <linux/cpufreq.h>
 #include <mach/cpufreq.h>
 
+#ifdef CONFIG_FB
+#include <linux/notifier.h>
+#include <linux/fb.h>
+#endif
+
 #define MSM_SLEEPER_MAJOR_VERSION	1
 #define MSM_SLEEPER_MINOR_VERSION	1
 
@@ -27,8 +32,13 @@ extern uint32_t maxscroff;
 extern uint32_t maxscroff_freq;
 static int limit_set = 0;
 
-#ifdef CONFIG_HAS_EARLYSUSPEND
-static void msm_sleeper_early_suspend(struct early_suspend *h)
+#ifdef CONFIG_FB
+struct notifier_block sleeper_fb_notif;
+static int sleeper_fb_notifier_callback(struct notifier_block *self, unsigned long event, void *data);
+#endif
+
+#ifdef CONFIG_FB
+static void msm_sleeper_fb_suspend(void)
 {
 	int cpu;
 
@@ -42,7 +52,7 @@ static void msm_sleeper_early_suspend(struct early_suspend *h)
 	return; 
 }
 
-static void msm_sleeper_late_resume(struct early_suspend *h)
+static void msm_sleeper_fb_resume(void)
 {
 	int cpu;
 
@@ -56,12 +66,6 @@ static void msm_sleeper_late_resume(struct early_suspend *h)
 	limit_set = 0;
 	return; 
 }
-
-static struct early_suspend msm_sleeper_early_suspend_driver = {
-	.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 10,
-	.suspend = msm_sleeper_early_suspend,
-	.resume = msm_sleeper_late_resume,
-};
 #endif
 
 static int __init msm_sleeper_init(void)
@@ -70,11 +74,41 @@ static int __init msm_sleeper_init(void)
 		 MSM_SLEEPER_MAJOR_VERSION,
 		 MSM_SLEEPER_MINOR_VERSION);
 
-#ifdef CONFIG_HAS_EARLYSUSPEND
-	register_early_suspend(&msm_sleeper_early_suspend_driver);
+#ifdef CONFIG_FB
+	sleeper_fb_notif.notifier_call = sleeper_fb_notifier_callback;
+	fb_register_client(&sleeper_fb_notif);
 #endif
 	return 0;
 }
+
+#ifdef CONFIG_FB
+static int sleeper_fb_notifier_callback(struct notifier_block *self,
+				unsigned long event, void *data)
+{
+	struct fb_event *evdata = data;
+	int *blank;
+
+	if (evdata && evdata->data) {
+		if (event == FB_EVENT_BLANK) {
+			blank = evdata->data;
+			switch (*blank) {
+				case FB_BLANK_UNBLANK:
+				case FB_BLANK_NORMAL:
+				case FB_BLANK_VSYNC_SUSPEND:
+				case FB_BLANK_HSYNC_SUSPEND:
+					msm_sleeper_fb_resume();
+					break;
+				default:
+				case FB_BLANK_POWERDOWN:
+					msm_sleeper_fb_suspend();
+					break;
+			}
+		}
+	}
+
+	return 0;
+}
+#endif
 
 MODULE_AUTHOR("flar2 <asegaert at gmail.com>");
 MODULE_DESCRIPTION("'msm-sleeper' - Limit max frequency while screen is off");
