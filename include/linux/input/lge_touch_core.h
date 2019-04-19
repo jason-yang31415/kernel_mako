@@ -24,6 +24,23 @@
 #define MAX_FINGER	10
 #define MAX_BUTTON	4
 
+#ifdef CONFIG_DOUBLETAP_TO_WAKE
+#define DT2W_INTERVAL (700)
+#define DT2W_TOUCH_AREA (30)
+#define DT2W_WLOCK_TIMEOUT (700)
+
+struct double_tap_wake {
+	unsigned int	enabled;
+	unsigned int	interval;
+	unsigned int	wlock_timeout;
+	unsigned int	touch;
+	unsigned int	touches;
+	unsigned long	time;
+	struct wake_lock wlock;
+	struct mutex	lock;
+};
+#endif
+
 struct touch_device_caps {
 	u8              button_support;
 	u16             y_button_boundary;
@@ -223,6 +240,9 @@ struct lge_touch_data {
 #ifdef CONFIG_FB
 	struct notifier_block fb_notif;
 	bool fb_suspended;
+#endif
+#ifdef CONFIG_DOUBLETAP_TO_WAKE
+	struct double_tap_wake			dt_wake;
 #endif
 };
 
