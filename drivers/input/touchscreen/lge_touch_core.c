@@ -1666,6 +1666,36 @@ static ssize_t show_charger(struct lge_touch_data *ts, char *buf)
 	return sprintf(buf, "%d\n", ts->charger_type);
 }
 
+#ifdef CONFIG_DOUBLETAP_TO_WAKE
+/* store_dt2w_enabled
+ *
+ * store enabled status of dt2w
+ */
+
+static ssize_t store_dt2w_enabled(struct lge_touch_data *ts, const char *buf, size_t count)
+{
+	unsigned int value;
+	int ret;
+
+	ret = sscanf(buf, "%u", &value);
+	if (value < 0 || value > 1)
+		return -EINVAL;
+	
+	ts->dt_wake.enabled = value;
+	return count;
+}
+
+/* show_dt2w_enabled
+ * 
+ * show enabled status of dt2w
+ */
+
+ static ssize_t show_dt2w_enabled(struct lge_touch_data *ts, char *buf)
+ {
+	return sprintf(buf, "%u\n", ts->dt_wake.enabled);
+ }
+ #endif
+
 static LGE_TOUCH_ATTR(platform_data, S_IRUGO | S_IWUSR, show_platform_data, NULL);
 static LGE_TOUCH_ATTR(firmware, S_IRUGO | S_IWUSR, show_fw_info, store_fw_upgrade);
 static LGE_TOUCH_ATTR(fw_ver, S_IRUGO | S_IWUSR, show_fw_ver, NULL);
@@ -1677,6 +1707,9 @@ static LGE_TOUCH_ATTR(show_touches, S_IRUGO | S_IWUSR, show_show_touches, store_
 static LGE_TOUCH_ATTR(pointer_location, S_IRUGO | S_IWUSR, show_pointer_location,
 					store_pointer_location);
 static LGE_TOUCH_ATTR(charger, S_IRUGO | S_IWUSR, show_charger, NULL);
+#ifdef CONFIG_DOUBLETAP_TO_WAKE
+static LGE_TOUCH_ATTR(dt_wake_enabled, S_IRUGO | S_IWUSR, show_dt2w_enabled, store_dt2w_enabled);
+#endif
 
 static struct attribute *lge_touch_attribute_list[] = {
 	&lge_touch_attr_platform_data.attr,
@@ -1689,6 +1722,9 @@ static struct attribute *lge_touch_attribute_list[] = {
 	&lge_touch_attr_show_touches.attr,
 	&lge_touch_attr_pointer_location.attr,
 	&lge_touch_attr_charger.attr,
+#ifdef CONFIG_DOUBLETAP_TO_WAKE
+	&lge_touch_attr_dt_wake_enabled.attr,
+#endif
 	NULL,
 };
 
