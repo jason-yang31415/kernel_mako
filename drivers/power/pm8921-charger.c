@@ -1246,9 +1246,10 @@ static int pm_power_get_property_mains(struct power_supply *psy,
 		}
 
 		/* USB with max current greater than 500 mA connected */
-		if (usb_target_ma > USB_WALL_THRESHOLD_MA)
+		if (usb_target_ma > USB_WALL_THRESHOLD_MA){
 			val->intval = is_usb_chg_plugged_in(the_chip);
 			return 0;
+		}
 
 		break;
 	default:
@@ -4147,13 +4148,14 @@ static int __devinit pm8921_chg_hw_init(struct pm8921_chg_chip *chip)
 	/* Enable isub_fine resolution AICL for PM8917 */
 	if (pm8xxx_get_version(chip->dev->parent) == PM8XXX_VERSION_8917) {
 		chip->iusb_fine_res = true;
-		if (chip->uvd_voltage_mv)
+		if (chip->uvd_voltage_mv){
 			rc = pm_chg_uvd_threshold_set(chip,
 					chip->uvd_voltage_mv);
 			if (rc) {
 				pr_err("Failed to set UVD threshold %drc=%d\n",
 						chip->uvd_voltage_mv, rc);
-			return rc;
+				return rc;
+			}
 		}
 	}
 
