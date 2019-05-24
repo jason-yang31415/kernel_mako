@@ -1281,7 +1281,7 @@ static const char *sb_tx6_mux_text[] = {
 		"DEC6"
 };
 
-static const char const *sb_tx7_to_tx10_mux_text[] = {
+static const char *sb_tx7_to_tx10_mux_text[] = {
 	"ZERO", "RMIX1", "RMIX2", "RMIX3", "RMIX4", "RMIX5", "RMIX6", "RMIX7",
 		"DEC1", "DEC2", "DEC3", "DEC4", "DEC5", "DEC6", "DEC7", "DEC8",
 		"DEC9", "DEC10"
@@ -1311,7 +1311,7 @@ static const char *dec6_mux_text[] = {
 	"ZERO", "DMIC6", "ADC1",
 };
 
-static const char const *dec7_mux_text[] = {
+static const char *dec7_mux_text[] = {
 	"ZERO", "DMIC1", "DMIC6", "ADC1", "ADC6", "ANC1_FB", "ANC2_FB",
 };
 
@@ -1327,16 +1327,16 @@ static const char *dec10_mux_text[] = {
 	"ZERO", "DMIC3", "DMIC6", "ADC1", "ADC4", "ADCMB", "ANC1_FB", "ANC2_FB",
 };
 
-static const char const *anc_mux_text[] = {
+static const char *anc_mux_text[] = {
 	"ZERO", "ADC1", "ADC2", "ADC3", "ADC4", "ADC5", "ADC6", "ADC_MB",
 		"RSVD_1", "DMIC1", "DMIC2", "DMIC3", "DMIC4", "DMIC5", "DMIC6"
 };
 
-static const char const *anc1_fb_mux_text[] = {
+static const char *anc1_fb_mux_text[] = {
 	"ZERO", "EAR_HPH_L", "EAR_LINE_1",
 };
 
-static const char *const iir_inp1_text[] = {
+static const char *iir_inp1_text[] = {
 	"ZERO", "DEC1", "DEC2", "DEC3", "DEC4", "DEC5", "DEC6", "DEC7", "DEC8",
 	"DEC9", "DEC10", "RX1", "RX2", "RX3", "RX4", "RX5", "RX6", "RX7"
 };
@@ -6057,7 +6057,7 @@ void tabla_mbhc_cal(struct snd_soc_codec *codec)
 	tabla_turn_onoff_rel_detection(codec, true);
 }
 
-void *tabla_mbhc_cal_btn_det_mp(const struct tabla_mbhc_btn_detect_cfg* btn_det,
+void *tabla_mbhc_cal_btn_det_mp(struct tabla_mbhc_btn_detect_cfg* btn_det,
 				const enum tabla_mbhc_btn_det_mem mem)
 {
 	void *ret = &btn_det->_v_btn_low;
@@ -6360,7 +6360,7 @@ static irqreturn_t tabla_dce_handler(int irq, void *data)
 	u16 *btn_high;
 	int btn = -1, meas = 0;
 	struct tabla_priv *priv = data;
-	const struct tabla_mbhc_btn_detect_cfg *d =
+	struct tabla_mbhc_btn_detect_cfg *d =
 	    TABLA_MBHC_CAL_BTN_DET_PTR(priv->mbhc_cfg.calibration);
 	short btnmeas[d->n_btn_meas + 1];
 	struct snd_soc_codec *codec = priv->codec;

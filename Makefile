@@ -585,6 +585,14 @@ endif
 # Use make W=1 to enable them (see scripts/Makefile.build)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-but-set-variable)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-const-variable)
+KBUILD_CFLAGS += $(call cc-disable-warning, shift-overflow)
+KBUILD_CFLAGS += $(call cc-disable-warning, format-truncation)
+KBUILD_CFLAGS += $(call cc-disable-warning, format-overflow)
+KBUILD_CFLAGS += $(call cc-disable-warning, misleading-indentation)
+KBUILD_CFLAGS += $(call cc-disable-warning, bool-compare)
+KBUILD_CFLAGS += $(call cc-disable-warning, logical-not-parentheses)
+KBUILD_CFLAGS += $(call cc-disable-warning, bool-operation)
+KBUILD_CFLAGS += $(call cc-disable-warning, switch-unreachable)
 
 ifdef CONFIG_FRAME_POINTER
 KBUILD_CFLAGS	+= -fno-omit-frame-pointer -fno-optimize-sibling-calls

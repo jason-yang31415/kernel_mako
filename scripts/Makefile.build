@@ -70,6 +70,14 @@ warning-1 += -Wold-style-definition
 warning-1 += $(call cc-option, -Wmissing-include-dirs)
 warning-1 += $(call cc-option, -Wunused-but-set-variable)
 warning-1 += $(call cc-option, -Wunused-const-variable)
+warning-1 += $(call cc-option, -Wshift-overflow)
+warning-1 += $(call cc-option, -Wformat-truncation)
+warning-1 += $(call cc-option, -Wformat-overflow)
+warning-1 += $(call cc-option, -Wmisleading-indentation)
+warning-1 += $(call cc-option, -Wbool-compare)
+warning-1 += $(call cc-option, -Wlogical-not-parentheses)
+warning-1 += $(call cc-option, -Wbool-operation)
+warning-1 += $(call cc-option, -Wswitch-unreachable)
 warning-1 += $(call cc-disable-warning, missing-field-initializers)
 
 warning-2 := -Waggregate-return
