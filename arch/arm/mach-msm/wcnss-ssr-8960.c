@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2012, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2011-2015, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -28,8 +28,6 @@
 #include "smd_private.h"
 #include "ramdump.h"
 
-#include "msm_watchdog.h"
-
 #define MODULE_NAME			"wcnss_8960"
 #define MAX_BUF_SIZE			0x51
 
@@ -51,6 +49,8 @@ static void smsm_state_cb_hdlr(void *data, uint32_t old_state,
 	riva_crash = true;
 
 	pr_err("%s: smsm state changed\n", MODULE_NAME);
+
+	wcnss_riva_dump_pmic_regs();
 
 	if (!(new_state & SMSM_RESET))
 		return;
@@ -123,8 +123,9 @@ static void riva_post_bootup(struct work_struct *work)
 
 	pr_debug(MODULE_NAME ": Cancel APPS vote for Iris & Riva\n");
 
-	wcnss_wlan_power(&pdev->dev, pwlanconfig,
-		WCNSS_WLAN_SWITCH_OFF);
+	if (pwlanconfig != NULL)
+		wcnss_wlan_power(&pdev->dev, pwlanconfig,
+			WCNSS_WLAN_SWITCH_OFF);
 }
 
 /* Subsystem handlers */
@@ -184,7 +185,6 @@ static int riva_ramdump(int enable, const struct subsys_desc *subsys)
 /* Riva crash handler */
 static void riva_crash_shutdown(const struct subsys_desc *subsys)
 {
-	pet_watchdog();
 	pr_err("%s: crash shutdown : %d\n", MODULE_NAME, riva_crash);
 	if (riva_crash != true) {
 		smsm_riva_reset();
@@ -192,6 +192,7 @@ static void riva_crash_shutdown(const struct subsys_desc *subsys)
 		 * fatal routine */
 		mdelay(3000);
 	}
+
 }
 
 static struct subsys_desc riva_8960 = {
@@ -239,7 +240,7 @@ static int __init riva_ssr_module_init(void)
 		goto out;
 	}
 	ret = request_irq(RIVA_APSS_WDOG_BITE_RESET_RDY_IRQ,
-			riva_wdog_bite_irq_hdlr, IRQF_TRIGGER_HIGH,
+			riva_wdog_bite_irq_hdlr, IRQF_TRIGGER_RISING,
 				"riva_wdog", NULL);
 
 	if (ret < 0) {

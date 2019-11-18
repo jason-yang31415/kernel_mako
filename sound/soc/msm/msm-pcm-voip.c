@@ -539,6 +539,11 @@ static int msm_pcm_playback_copy(struct snd_pcm_substream *substream, int a,
 			} else
 				ret = copy_from_user(&buf_node->frame,
 							buf, count);
+			if (ret) {
+				pr_err("%s: copy from user failed %d\n",
+				       __func__, ret);
+				return -EFAULT;
+			}
 			spin_lock_irqsave(&prtd->dsp_lock, dsp_flags);
 			list_add_tail(&buf_node->list, &prtd->in_queue);
 			spin_unlock_irqrestore(&prtd->dsp_lock, dsp_flags);
@@ -567,6 +572,7 @@ static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct voip_drv_info *prtd = runtime->private_data;
 	unsigned long dsp_flags;
+	int size;
 
 	count = frames_to_bytes(runtime, frames);
 
@@ -585,14 +591,19 @@ static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 					struct voip_buf_node, list);
 			list_del(&buf_node->list);
 			spin_unlock_irqrestore(&prtd->dsp_ul_lock, dsp_flags);
-			if (prtd->mode == MODE_PCM)
+			if (prtd->mode == MODE_PCM) {
 				ret = copy_to_user(buf,
 						   &buf_node->frame.voc_pkt,
-						   count);
-			else
+						   buf_node->frame.len);
+			} else {
+				size = sizeof(buf_node->frame.header) +
+				       sizeof(buf_node->frame.len) +
+				       buf_node->frame.len;
+
 				ret = copy_to_user(buf,
 						   &buf_node->frame,
-						   count);
+						   size);
+			}
 			if (ret) {
 				pr_err("%s: Copy to user retuned %d\n",
 					__func__, ret);

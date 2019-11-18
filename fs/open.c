@@ -1109,7 +1109,6 @@ int filp_close(struct file *filp, fl_owner_t id)
 		dnotify_flush(filp, id);
 		locks_remove_posix(filp, id);
 	}
-	security_file_close(filp);
 	fput(filp);
 	return retval;
 }
