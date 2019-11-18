@@ -38,7 +38,6 @@ static int thermal_throttled = 0;
 static int pre_throttled_max = 0;
 
 static struct msm_thermal_data msm_thermal_info;
-<<<<<<< HEAD
 
 static struct msm_thermal_stat msm_thermal_stats = {
     .time_low_start = 0,
@@ -62,21 +61,6 @@ struct thermal_counter {
 static struct delayed_work check_temp_work;
 //static struct workqueue_struct *check_temp_workq;
 
-=======
-
-static struct msm_thermal_stat msm_thermal_stats = {
-    .time_low_start = 0,
-    .time_mid_start = 0,
-    .time_max_start = 0,
-    .time_low = 0,
-    .time_mid = 0,
-    .time_max = 0,
-};
-
-static struct delayed_work check_temp_work;
-//static struct workqueue_struct *check_temp_workq;
-
->>>>>>> 7d277a226abddb689c44c5b23a5e86d12a2aec8c
 static void update_stats(void)
 {
     if (msm_thermal_stats.time_low_start > 0) {
