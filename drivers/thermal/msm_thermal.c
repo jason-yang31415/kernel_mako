@@ -48,6 +48,16 @@ static struct msm_thermal_stat msm_thermal_stats = {
     .time_max = 0,
 };
 
+struct thermal_counter {
+    unsigned int low;
+    unsigned int med;
+    unsigned int high;
+} counter = {
+    .low = 0,
+    .med = 0,
+    .high = 0
+};
+
 static struct delayed_work check_temp_work;
 //static struct workqueue_struct *check_temp_workq;
 
@@ -142,9 +152,54 @@ static void check_temp(struct work_struct *work)
     if (cpu_policy && thermal_throttled == 0)
         pre_throttled_max = cpu_policy->max;
 
+    if (temp > msm_thermal_info.allowed_low_high){
+        if (counter.low < msm_thermal_info.counter_max)
+            counter.low++;
+    } else if (temp < msm_thermal_info.allowed_low_low && counter.low > 0){
+        counter.low--;
+    }
+
+    if (temp > msm_thermal_info.allowed_mid_high){
+        if (counter.med < msm_thermal_info.counter_max)
+            counter.med++;
+    } else if (temp < msm_thermal_info.allowed_mid_low && counter.med > 0){
+        counter.med--;
+    }
+
+    if (temp > msm_thermal_info.allowed_max_high){
+        if (counter.high < msm_thermal_info.counter_max)
+            counter.high++;
+    } else if (temp < msm_thermal_info.allowed_max_low && counter.high > 0){
+        counter.high--;
+    }
+
     update_policy = false;
-    if (temp < msm_thermal_info.allowed_low_low){
-        if (thermal_throttled > 0){
+    if (counter.high > msm_thermal_info.counter_limit){
+        if (thermal_throttled != 3){
+            update_policy = true;
+            max_freq = msm_thermal_info.allowed_max_freq;
+            thermal_throttled = 3;
+            pr_warn("msm_thermal: Thermal Throttled (max)! temp:%lu by:%u\n",
+                        temp, msm_thermal_info.sensor_id);
+        }
+    } else if (counter.med > msm_thermal_info.counter_limit){
+        if (thermal_throttled != 2){
+            update_policy = true;
+            max_freq = msm_thermal_info.allowed_mid_freq;
+            thermal_throttled = 2;
+            pr_warn("msm_thermal: Thermal Throttled (mid)! temp:%lu by:%u\n",
+                        temp, msm_thermal_info.sensor_id);
+        }
+    } else if (counter.low > msm_thermal_info.counter_limit){
+        if (thermal_throttled != 1){
+            update_policy = true;
+            max_freq = msm_thermal_info.allowed_low_freq;
+            thermal_throttled = 1;
+            pr_warn("msm_thermal: Thermal Throttled (low)! temp:%lu by:%u\n",
+                        temp, msm_thermal_info.sensor_id);
+        }
+    } else {
+        if (thermal_throttled != 0){
             update_policy = true;
             if (pre_throttled_max != 0)
                 max_freq = pre_throttled_max;
@@ -155,31 +210,11 @@ static void check_temp(struct work_struct *work)
             thermal_throttled = 0;
             pr_info("msm_thermal: Thermal Throttle ended! temp:%lu by:%u\n", temp, msm_thermal_info.sensor_id);
         }
-    } else if (temp >= msm_thermal_info.allowed_low_low && temp < msm_thermal_info.allowed_mid_low) {
-        if (thermal_throttled != 1){
-            update_policy = true;
-            max_freq = msm_thermal_info.allowed_low_freq;
-            thermal_throttled = 1;
-            pr_warn("msm_thermal: Thermal Throttled (low)! temp:%lu by:%u\n",
-                        temp, msm_thermal_info.sensor_id);
-        }
-    } else if (temp >= msm_thermal_info.allowed_mid_low && temp < msm_thermal_info.allowed_max_low) {
-        if (thermal_throttled != 2){
-            update_policy = true;
-            max_freq = msm_thermal_info.allowed_mid_freq;
-            thermal_throttled = 2;
-            pr_warn("msm_thermal: Thermal Throttled (mid)! temp:%lu by:%u\n",
-                        temp, msm_thermal_info.sensor_id);
-        }
-    } else if (temp >= msm_thermal_info.allowed_max_low) {
-        if (thermal_throttled < 3){
-            update_policy = true;
-            max_freq = msm_thermal_info.allowed_max_freq;
-            thermal_throttled = 3;
-            pr_warn("msm_thermal: Thermal Throttled (max)! temp:%lu by:%u\n",
-                        temp, msm_thermal_info.sensor_id);
-        }
     }
+
+    if (counter.low > 0)
+        pr_info("msm_thermal: counters l %u m %u h %u\n", counter.low, counter.med, counter.high);
+
     update_stats();
     start_stats(thermal_throttled);
     if (update_policy){
@@ -286,6 +321,8 @@ show_one(allowed_low_high, allowed_low_high);
 show_one(allowed_low_low, allowed_low_low);
 show_one(allowed_low_freq, allowed_low_freq);
 show_one(poll_ms, poll_ms);
+show_one(counter_limit, counter_limit);
+show_one(counter_max, counter_max);
 
 static ssize_t store_shutdown_temp(struct kobject *a, struct attribute *b,
                                    const char *buf, size_t count)
@@ -441,6 +478,34 @@ static ssize_t store_poll_ms(struct kobject *a, struct attribute *b,
     return count;
 }
 
+static ssize_t store_counter_limit(struct kobject *a, struct attribute *b,
+                                   const char *buf, size_t count)
+{
+    unsigned int input;
+    int ret;
+    ret = sscanf(buf, "%u", &input);
+    if (ret != 1)
+        return -EINVAL;
+    
+    msm_thermal_info.counter_limit = input;
+
+    return count;
+}
+
+static ssize_t store_counter_max(struct kobject *a, struct attribute *b,
+                                   const char *buf, size_t count)
+{
+    unsigned int input;
+    int ret;
+    ret = sscanf(buf, "%u", &input);
+    if (ret != 1)
+        return -EINVAL;
+    
+    msm_thermal_info.counter_max = input;
+
+    return count;
+}
+
 define_one_global_rw(shutdown_temp);
 define_one_global_rw(allowed_max_high);
 define_one_global_rw(allowed_max_low);
@@ -452,6 +517,8 @@ define_one_global_rw(allowed_low_high);
 define_one_global_rw(allowed_low_low);
 define_one_global_rw(allowed_low_freq);
 define_one_global_rw(poll_ms);
+define_one_global_rw(counter_limit);
+define_one_global_rw(counter_max);
 
 static struct attribute *msm_thermal_attributes[] = {
     &shutdown_temp.attr,
@@ -465,6 +532,8 @@ static struct attribute *msm_thermal_attributes[] = {
     &allowed_low_low.attr,
     &allowed_low_freq.attr,
     &poll_ms.attr,
+    &counter_limit.attr,
+    &counter_max.attr,
     NULL
 };
 
@@ -538,6 +607,13 @@ int __devinit msm_thermal_init(struct msm_thermal_data *pdata)
     BUG_ON(!pdata);
     BUG_ON(pdata->sensor_id >= TSENS_MAX_SENSORS);
     memcpy(&msm_thermal_info, pdata, sizeof(struct msm_thermal_data));
+
+    // set counter limit to 10
+    msm_thermal_info.counter_limit = 30;
+    msm_thermal_info.counter_max = 60;
+    counter.low = 0;
+    counter.med = 0;
+    counter.high = 0;
 
     enabled = 1;
     /*check_temp_workq=alloc_workqueue("msm_thermal", WQ_UNBOUND | WQ_RESCUER, 1);
